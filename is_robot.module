@@ -130,21 +130,30 @@ function is_robot_load_robots() {
  *   FALSE on error. If $explain is FALSE, return TRUE on success, FALSE on error
  */
 function is_robot($explain = FALSE) {
-  $result = db_query('SELECT * FROM {is_robot}');
+  // Initialize instance variables
   $robots = array();
-  while ($robot = $result->fetchObject()) {
-    $robots[] = (array) $robot;
+  $replace = array();
+  $found = FALSE;
+  
+  // Determine which action we're taking
+  $action = variable_get('is_robot_append_hook_is_robot_robots_alter', 'append');
+  
+  // Only read from the database if we have to append hooks onto the end of the items
+  // in the database.
+  if ($action == 'append') {
+    $result = db_query('SELECT * FROM {is_robot}');
+    while ($robot = $result->fetchObject()) {
+      $robots[] = (array) $robot;
+    }
   }
   
   // Implement any hooks to module_is_robot_robots_alter.
-  $replace = array();
   drupal_alter('is_robot_robots', $robots, $replace);
   
-  if (variable_get('is_robot_append_hook_is_robot_robots_alter', 'append') == 'replace') {
-    $robots = $replace;
-  }
+  // If we're replacing then assign one to the other, otherwise keep them the same
+  $robots = ($action == 'replace') ? $replace : $robots;
     
-  $found = FALSE;
+  // Iterate through the robots and look for a match.
   foreach ($robots as $robot) {
     if (!empty($_SERVER['HTTP_USER_AGENT'])) {
       if ($robot['user_agent'] == utf8_encode(strtolower($_SERVER['HTTP_USER_AGENT'])) || $robot['user_agent'] == $_SERVER['HTTP_USER_AGENT']) {
