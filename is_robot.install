@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Is Robot Drupal Install File
+ */
+
+/**
+ * Implements hook_schema()
+ */
+function is_robot_schema(){
+  $schema = array();
+  $schema['is_robot'] = array(
+    'description' => 'Configuration of is robot robots.',
+    'fields' => array(
+      'robot_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'Short code for each robot.',
+      ),
+      'user_agent' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'User agent of the robot.',
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'description' => 'Serialized robot data.',
+      ),
+    ),
+    'primary key' => array('robot_id'),
+    'indexes' => array(
+      'user_agent' => array('user_agent'),
+    ),  
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install()
+ */
+function is_robot_install(){
+  if (function_exists('is_robot_load_robots')) {
+    is_robot_load_robots();
+  }
+  else {
+    module_load_include('module', 'is_robot');
+    is_robot_load_robots();
+  }
+}
+

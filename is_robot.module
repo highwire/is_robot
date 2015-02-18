@@ -1,0 +1,163 @@
+<?php
+
+/**
+ * @file
+ * Is Robot Drupal Module
+ */
+
+/**
+ * Implements hook_menu()
+ */
+function is_robot_menu() {
+  $items = array();
+  $items['admin/config/development/is-robot'] = array(
+    'title' => t('Is Robot? Settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('is_robot_settings_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer is robot'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission()
+ */
+function is_robot_permission() {
+  return array(
+    'administer is robot' => array(
+      'title' => t('Administer Is Robot? Settings'),
+    ),
+  );
+}
+
+/**
+ * The administrative settings for is_robot
+ */
+function is_robot_settings_form($form, &$form_state) {
+  $form['is_robot_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General Settings'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+
+  $form['is_robot_settings']['is_robot_append_hook_is_robot_robots_alter'] = array(
+    '#title' => t('Append or replace values in database with hook values'),
+    '#type' => 'select',
+    '#options' => array(
+      'append' => t('Append'),
+      'replace' => t('Replace'),
+    ),
+    '#default_value' => variable_get('is_robot_append_hook_is_robot_robots_alter', 'append'),
+  );
+  $form['is_robot_settings']['is_robot_cron_frequency'] = array(
+    '#title' => t('How often to run the cron to update the robots list'),
+    '#type' => 'select',
+    '#options' => array(
+      '82400' => t('Daily'),
+      '604000' => t('Weekly'),
+      '2592000' => t('Every 30 Days'),
+    ),
+    '#default_value' => variable_get('is_robot_cron_frequency', '604000'),
+  );
+  return system_settings_form($form);
+}
+
+
+/**
+ * Implements hook_cron()
+ */
+function is_robot_cron() {
+  // Only run this once a week
+  $last_run = variable_get("is_robot_last_run", 0);
+  $time_past = time() - $last_run;
+  if ($time_past > variable_get('is_robot_cron_frequency', 604000) || $last_run == 0) {
+    is_robot_load_robots();
+    variable_set('is_robot_last_run', time());
+  }
+}
+
+/**
+ * Import robot list
+ *
+ * Import robot list from http://www.robotstxt.org/db/all.txt
+ */
+function is_robot_load_robots() {
+  $r = drupal_http_request("http://www.robotstxt.org/db/all.txt");
+  if ($r->data) {
+    $robots = $r->data;
+    $robots = str_replace("\n ", " ", $robots);
+    $robots = explode("\n\n", $robots);
+    $robot_array = array();
+    foreach ($robots as $robot){
+      $lines = explode("\n", $robot);
+      $bot = array();
+      foreach ($lines as $line) {
+        if (!empty($line)) {
+          $items = explode(":", $line, 2);
+          if (!empty($items[1])) {
+            $bot[trim($items[0])] = trim($items[1]);
+          }
+        }
+      }
+      $robot_array[] = $bot;
+    }
+  }
+	  
+  // Clear the database and re-populate
+  db_query("TRUNCATE {is_robot}");
+  foreach ($robot_array as $robot) {
+    if (!empty($robot) && !empty($robot['robot-useragent'])) {
+      $robots = array(
+        'robot_id' => utf8_encode($robot['robot-id']),
+        'user_agent' => utf8_encode(strtolower($robot['robot-useragent'])),
+        'data' => utf8_encode(serialize($robot)),
+      );
+      drupal_write_record('is_robot', $robots);
+    }
+  }
+}
+
+/**
+ * Check if user is a robot
+ *
+ * @param bool $explain
+ *   Do we send back the data returned by the query? If true, then yes.
+ * @return mixed $results
+ *   If $explain is TRUE, return an object with the results of our query on success, 
+ *   FALSE on error. If $explain is FALSE, return TRUE on success, FALSE on error
+ */
+function is_robot($explain = FALSE) {
+  $result = db_query('SELECT * FROM {is_robot}');
+  $robots = array();
+  while ($robot = $result->fetchObject()) {
+    $robots[] = (array) $robot;
+  }
+  
+  // Implement any hooks to module_is_robot_robots_alter.
+  $replace = array();
+  drupal_alter('is_robot_robots', $robots, $replace);
+  
+  if (variable_get('is_robot_append_hook_is_robot_robots_alter', 'append') == 'replace') {
+    $robots = $replace;
+  }
+    
+  $found = FALSE;
+  foreach ($robots as $robot) {
+    if (!empty($_SERVER['HTTP_USER_AGENT'])) {
+      if ($robot['user_agent'] == utf8_encode(strtolower($_SERVER['HTTP_USER_AGENT'])) || $robot['user_agent'] == $_SERVER['HTTP_USER_AGENT']) {
+        $found = TRUE;
+        break;
+      }
+    }
+  }
+
+  if (!empty($explain) && $found == TRUE) {
+    return $robot;
+  }
+  else {
+    return $found;
+  }
+}
