@@ -8,28 +8,35 @@
 /**
  * Implements hook_schema()
  */
-function is_robot_schema(){
+function is_robot_schema() {
   $schema = array();
   $schema['is_robot'] = array(
-    'description' => 'Configuration of is robot robots.',
+    'description' => get_t('Configuration of is robot robots.'),
     'fields' => array(
       'robot_id' => array(
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
-        'default' => 'Short code for each robot.',
+        'description' => get_t('Short code for each robot.'),
       ),
       'user_agent' => array(
-        'type' => 'varchar',
+        'type' => 'textarea',
         'length' => 255,
         'not null' => TRUE,
-        'default' => '',
-        'description' => 'User agent of the robot.',
+        'description' => get_t('User agent of the robot.'),
       ),
       'data' => array(
         'type' => 'text',
         'not null' => FALSE,
-        'description' => 'Serialized robot data.',
+        'description' => get_t('Serialized robot data.'),
+      ),
+      'is_manual' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+        'description' => get_t('Was this manually added by CRUD interface'),
       ),
     ),
     'primary key' => array('robot_id'),
@@ -53,3 +60,10 @@ function is_robot_install(){
   }
 }
 
+/**
+ * Add the is_manual field to the is_robot module for our CRUD interface
+ */
+function is_robot_update_7105() {
+  $schema = drupal_get_schema(is_robot);
+  db_add_field('is_robot', 'is_manual', $schema['fields']['is_manual']);
+}
