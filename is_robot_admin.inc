@@ -32,8 +32,20 @@ function is_robot_settings_form($form, &$form_state) {
       '82400' => t('Daily'),
       '604000' => t('Weekly'),
       '2592000' => t('Every 30 Days'),
+      'custom' => t('Custom'),
     ),
     '#default_value' => variable_get('is_robot_cron_frequency', '604000'),
+  );
+  $form['is_robot_settings']['is_robot_cron_frequency_custom'] = array(
+    '#title' => t('Custom Interval (In Seconds)'),
+    '#type' => 'textfield',
+    '#maxlength' => 16,
+    '#default_value' => variable_get('is_robot_cron_frequency_custom', '604000'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="is_robot_cron_frequency"]' => array('value' => 'custom'),
+      ),
+    ),
   );
   return system_settings_form($form);
 }

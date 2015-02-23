@@ -11,7 +11,7 @@
 function is_robot_schema() {
   $schema = array();
   $schema['is_robot'] = array(
-    'description' => get_t('Configuration of is robot robots.'),
+    'description' => get_t('Configuration of Is Robot? robots.'),
     'fields' => array(
       'robot_id' => array(
         'type' => 'varchar',

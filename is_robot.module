@@ -91,7 +91,19 @@ function is_robot_cron() {
   // Only run this once a week
   $last_run = variable_get("is_robot_last_run", 0);
   $time_past = time() - $last_run;
-  if ($time_past > variable_get('is_robot_cron_frequency', 604000) || $last_run == 0) {
+  
+  // Check for the frequency in seconds. Will be overriden by custom if necessary
+  $frequency = variable_get('is_robot_cron_frequency', 604000);
+  if ($frequency == 'custom') {
+    $frequency = variable_get('is_robot_cron_frequency_custom', 604000);
+    if (empty($frequency)) {
+      $frequency = '604000';
+      variable_set('is_robot_cron_frequency_custom', 604000);
+    }
+  }
+  
+  // If we are past our frequency, then run the cron 
+  if ($time_past > $frequency || $last_run == 0) {
     is_robot_load_robots();
     variable_set('is_robot_last_run', time());
   }
