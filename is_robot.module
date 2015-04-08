@@ -160,25 +160,44 @@ function is_robot_load_robots() {
  *   If $explain is TRUE, return an object with the results of our query on success, 
  *   FALSE on error. If $explain is FALSE, return TRUE on success, FALSE on error
  */
-function is_robot($explain = FALSE) {
+function is_robot($explain = FALSE, $cache_reset = FALSE) {
   // Initialize instance variables
   $robots = array();
   $replace = array();
   $found = FALSE;
-  
+
   // Determine which action we're taking
   $action = variable_get('is_robot_append_hook_is_robot_robots_alter', 'append');
-  
-  // Only read from the database if we have to append hooks onto the end of the items
-  // in the database.
-  if ($action == 'replace') {
-    $result = db_query('SELECT * FROM {is_robot} WHERE is_manual = 1');
+
+  // Check cache first for robots list.
+  if (!$cache_reset && $cache = cache_get('is_robots_list')) {
+    $robots = $cache->data;
   }
   else {
-    $result = db_query('SELECT * FROM {is_robot}');
-  }
-  while ($robot = $result->fetchObject()) {
-    $robots[] = (array) $robot;
+    // If we are in the middle of a bootstrap and there is no cache, then just return FALSE
+    // and populate the cache at the end of the request. This means that bootstrap code should
+    // ONLY be reading from the cache. We need to do this because we cannot invoke drupal_alter
+    // from within hook_boot
+    if (drupal_get_bootstrap_phase() != DRUPAL_BOOTSTRAP_FULL) {
+      register_shutdown_function('is_robot');
+      return FALSE;
+    }
+  
+    // Only read from the database if we have to append hooks onto the end of the items
+    // in the database.
+    if ($action == 'replace') {
+      $result = db_query('SELECT * FROM {is_robot} WHERE is_manual = 1');
+    }
+    else {
+      $result = db_query('SELECT * FROM {is_robot}');
+    }
+    
+    while ($robot = $result->fetchObject()) {
+      $robots[] = (array) $robot;
+    }
+
+    // Set the cache. This cache is permanent and is generally repopulated on cron when we fetch a new list from robotstxt.org.
+    cache_set('is_robots_list', $robots);
   }
   
   // Implement any hooks to module_is_robot_robots_alter.
@@ -202,5 +221,18 @@ function is_robot($explain = FALSE) {
   }
   else {
     return $found;
+  }
+}
+
+/**
+ * Check if the user is robot()
+ * If user is a robot, Prints 503 Service unavailable error and exits.
+*/
+function is_robot_boot() {
+  // Verifying if checkbox for blocking robots is enabled
+  if(variable_get('is_robot_block_robots') && php_sapi_name() != "cli" && is_robot()) {
+    header($_SERVER["SERVER_PROTOCOL"]." 503 Service Temporarily Unavailable");
+    echo("503 Service Temporarily Unavailable");
+    exit();
   }
 }

@@ -47,6 +47,20 @@ function is_robot_settings_form($form, &$form_state) {
       ),
     ),
   );
+
+   $form['is_robot_block'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Robots'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+    '#description' => t('Enable this to return 503 Service Unavailable when a robot requests a page from your site. Use this setting carefully as leaving it on for too long can delist your site from Google search results'),
+  );
+  $form['is_robot_block']['is_robot_block_robots'] = array(
+    '#title' => t('Block Robots'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('is_robot_block_robots', FALSE),
+  );
+
   return system_settings_form($form);
 }
 

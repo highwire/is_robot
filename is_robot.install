@@ -11,24 +11,25 @@
 function is_robot_schema() {
   $schema = array();
   $schema['is_robot'] = array(
-    'description' => get_t('Configuration of Is Robot? robots.'),
+    'description' => 'Configuration of Is Robot? robots.',
     'fields' => array(
       'robot_id' => array(
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
-        'description' => get_t('Short code for each robot.'),
+        'description' => 'Short code for each robot.',
       ),
       'user_agent' => array(
-        'type' => 'textarea',
+        'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
-        'description' => get_t('User agent of the robot.'),
+        'default' => '',
+        'description' => 'User agent of the robot.',
       ),
       'data' => array(
         'type' => 'text',
         'not null' => FALSE,
-        'description' => get_t('Serialized robot data.'),
+        'description' => 'Serialized robot data.',
       ),
       'is_manual' => array(
         'type' => 'int',
@@ -36,7 +37,7 @@ function is_robot_schema() {
         'not null' => TRUE,
         'unsigned' => TRUE,
         'default' => 0,
-        'description' => get_t('Was this manually added by CRUD interface'),
+        'description' => 'Was this manually added by CRUD interface',
       ),
     ),
     'primary key' => array('robot_id'),
@@ -66,4 +67,11 @@ function is_robot_install(){
 function is_robot_update_7105() {
   $schema = drupal_get_schema(is_robot);
   db_add_field('is_robot', 'is_manual', $schema['fields']['is_manual']);
+}
+
+/**
+ * is_robot now implements hook_boot. Add the boot flag to is_robot in the systems table.
+ */
+function is_robot_update_7106() {
+  db_update('system')->fields(array('bootstrap' => 1))->condition('name', 'is_robot')->execute();
 }
