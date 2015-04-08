@@ -230,8 +230,8 @@ function is_robot($explain = FALSE, $cache_reset = FALSE) {
 */
 function is_robot_boot() {
   // Verifying if checkbox for blocking robots is enabled
-  if(variable_get('is_robot_block_robots') && php_sapi_name() != "cli" && is_robot()) {
-    header($_SERVER["SERVER_PROTOCOL"]." 503 Service Temporarily Unavailable");
+  if (variable_get('is_robot_block_robots') && php_sapi_name() != "cli" && is_robot()) {
+    header($_SERVER["SERVER_PROTOCOL"] . " 503 Service Temporarily Unavailable");
     echo("503 Service Temporarily Unavailable");
     exit();
   }
