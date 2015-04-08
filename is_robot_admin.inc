@@ -61,7 +61,16 @@ function is_robot_settings_form($form, &$form_state) {
     '#default_value' => variable_get('is_robot_block_robots', FALSE),
   );
 
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'is_robot_settings_form_submit';
+  return $form;
+}
+
+/**
+ * A callback to clear the is_robot_list cache
+ */
+function is_robot_settings_form_submit($form, &$form_state) {
+  cache_clear_all('is_robot_list', 'cache');
 }
 
 /**

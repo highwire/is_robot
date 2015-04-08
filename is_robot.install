@@ -65,8 +65,8 @@ function is_robot_install(){
  * Add the is_manual field to the is_robot module for our CRUD interface
  */
 function is_robot_update_7105() {
-  $schema = drupal_get_schema(is_robot);
-  db_add_field('is_robot', 'is_manual', $schema['fields']['is_manual']);
+  $schema = is_robot_schema();
+  db_add_field('is_robot', 'is_manual', $schema['is_robot']['fields']['is_manual']);
 }
 
 /**
