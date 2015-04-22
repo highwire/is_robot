@@ -48,7 +48,7 @@ function is_robot_settings_form($form, &$form_state) {
     ),
   );
 
-   $form['is_robot_block'] = array(
+  $form['is_robot_block'] = array(
     '#type' => 'fieldset',
     '#title' => t('Block Robots'),
     '#collapsible' => FALSE,
@@ -103,7 +103,7 @@ function is_robot_additional_items() {
       $robot['robot_id'] = $robot['robot-id'];
     }
       
-    $which = (isset($robot['is_manual'])) == 1 ? 'DATABASE' : 'HOOK';
+    $which = (!empty($robot['is_manual'])) ? 'DATABASE' : 'HOOK';
     
     $row = array();
     $row[] = $robot['robot_id'];

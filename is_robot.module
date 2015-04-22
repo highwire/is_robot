@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_menu()
+ * Implements hook_menu().
  */
 function is_robot_menu() {
   $items = array();
@@ -58,7 +58,7 @@ function is_robot_menu() {
 }
 
 /**
- * Implements hook_permission()
+ * Implements hook_permission().
  */
 function is_robot_permission() {
   return array(
@@ -85,7 +85,7 @@ function is_robot_id_load($id) {
 }
 
 /**
- * Implements hook_cron()
+ * Implements hook_cron().
  */
 function is_robot_cron() {
   // Only run this once a week
